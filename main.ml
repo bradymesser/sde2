@@ -1,9 +1,37 @@
-let rec helper (num, lst, el, n) =
-if el == n then 0.0::helper(num, (List.tl lst), el, n+1)
+(* Generates a list of weights determined by num * list[n] *)
+let rec helper2 (num, lst, el, n) =
+if el == n then
+try 0.0::helper2(num, (List.tl lst), el, n+1)
+with
+| _ -> [0.0]
 else
-try num *. (List.hd lst)::helper(num, (List.tl lst), el, n+1)
+try num *. (List.hd lst)::helper2(num, (List.tl lst), el, n+1)
+with
+| _ -> try [num *. (List.hd lst)]
 with
 | _ -> []
+;;
+
+(* Generates a list of list of weights *)
+let rec helper (num, lst, constLst, el, n) =
+try helper2(num, constLst, el, n)::helper(List.hd (List.tl lst), List.tl lst, constLst, el+1, 0)
+with
+| _ -> try [helper2(num, constLst, el, n)]
+with
+| _ -> [[5.]]
+;;
+
+let rec reduce1 (lst1, lst2) =
+try (List.hd lst1 +. List.hd lst2)::reduce1(List.tl lst1, List.tl lst2)
+with _ -> try [(List.hd lst1 +. List.hd lst2)]
+          with _ -> try [List.hd lst1]
+                    with _ -> [0.]
+;;
+(* returns a summed single list from two separate double lists *)
+let rec reduce2 (lst1, lst2) =
+try reduce1(List.hd lst1, List.hd lst2)::reduce2(List.tl lst1, List.tl lst2)
+with _ -> try [reduce1(List.hd lst1, List.hd lst2)]
+          with _ -> [List.hd lst1]
 ;;
 
 (** Returns net activation (scalar) for a single unit using our
@@ -59,18 +87,23 @@ else nextState(currentState, weightMatrix)
 used as a ’warmup’ for the next function *)
 (* Signature: val hopTrainAstate : float list -> float list list = <fun> *)
 (*Need to:*)
-let rec hopTrainAstate (astate) =
-(* try [helper(List.hd astate, )::0.0::helper(List.hd astate, List.tl astate)]::hopTrainAstate(List.tl astate) *)
-try [helper(List.hd astate, astate, 0, 0)::[helper((List.hd (List.tl astate)), astate, 1, 0)]](*::[helper(List.hd (List.tl astate), astate, 1, 0)]::[helper(List.hd (List.tl (List.tl astate)), astate, 2, 0)]::[helper(List.hd (List.tl (List.tl (List.tl astate))), astate, 3, 0)]*)
+let hopTrainAstate (astate) =
+try helper((List.hd astate), astate, astate, 0, 0)
 with
 | _ -> [[]]
-
 ;;
 
 (** This returns weight matrix, given a list of stored states
 (shown previously) using Eqns (4) and (5) *)
 (* Signature: val hopTrain : float list list -> float list list = <fun> *)
-let hopTrain (allStates) = 10.00;;
+let rec hopTrain (allStates) =
+try (hopTrainAstate(List.hd allStates)::hopTrain(List.tl allStates))
+with _ -> try [hopTrainAstate(List.hd allStates)]
+          with _ -> [[[]]]
+
+(* try hopTrain(allStates)
+with _ -> [[]] *)
+;;
 
 let os1 = [1.0; -1.0; 1.0; -1.0];;
 let os2 = [-1.0; -1.0; 1.0; -1.0];;
