@@ -1,3 +1,10 @@
+let rec helper (num, lst, el, n) =
+if el == n then 0.0::helper(num, (List.tl lst), el, n+1)
+else
+try num *. (List.hd lst)::helper(num, (List.tl lst), el, n+1)
+with
+| _ -> []
+;;
 
 (** Returns net activation (scalar) for a single unit using our
 list-based input and weight representation and Eqn (1) *)
@@ -43,12 +50,22 @@ with
 
 (** Returns network state after n time steps; i.e.,  update of N time steps *)
 (* Signature: val updateN : float list * float list list * int -> float list = <fun> *)
-let updateN (currentState, weightMatrix, n) = 8.0;;
+let rec updateN (currentState, weightMatrix, n) =
+if n > 1 then updateN((nextState (currentState, weightMatrix)), weightMatrix, n-1)
+else nextState(currentState, weightMatrix)
+;;
 
 (** Returns weight matrix for only one stored state,
 used as a ’warmup’ for the next function *)
 (* Signature: val hopTrainAstate : float list -> float list list = <fun> *)
-let hopTrainAstate (astate) = 9.0;;
+(*Need to:*)
+let rec hopTrainAstate (astate) =
+(* try [helper(List.hd astate, )::0.0::helper(List.hd astate, List.tl astate)]::hopTrainAstate(List.tl astate) *)
+try [helper(List.hd astate, astate, 0, 0)::[helper((List.hd (List.tl astate)), astate, 1, 0)]](*::[helper(List.hd (List.tl astate), astate, 1, 0)]::[helper(List.hd (List.tl (List.tl astate)), astate, 2, 0)]::[helper(List.hd (List.tl (List.tl (List.tl astate))), astate, 3, 0)]*)
+with
+| _ -> [[]]
+
+;;
 
 (** This returns weight matrix, given a list of stored states
 (shown previously) using Eqns (4) and (5) *)
@@ -61,6 +78,8 @@ let os3 = [-1.0; -1.0; 1.0; 1.0];;
 let w =
 [[0.; -1.; 1.; -1.]; [-1.; 0.; -1.; 1.]; [1.; -1.; 0.; -1.];
 [-1.; 1.; -1.; 0.]];;
+let we=[[0.0;-1.0];[-1.0;0.0]];;
+let oi=[-1.0;-1.0];;
 let w2 =
 [[0.; 1.; -1.; -1.]; [1.; 0.; -3.; 1.]; [-1.; -3.; 0.; -1.];
 [-1.; 1.; -1.; 0.]];;
